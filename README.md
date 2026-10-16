@@ -2,6 +2,10 @@
 
 **Live demo:** <https://farazjz.github.io/xor-shield/> · Licensed MIT
 
+![XOR Shield in action — paste a worker, press Protect, the round-trip verify passes](assets/demo.gif)
+
+*Drag in a Cloudflare Worker (ready-made sample: [`examples/demo-worker.js`](examples/demo-worker.js)) → a fresh key XOR-packs every string into one table → the round-trip check proves byte-identical output → download the protected file.*
+
 `index.html` is the entire app: open it directly in any modern browser
 (double-click — no server, no internet needed). Everything runs client-side.
 
@@ -58,3 +62,5 @@ Stepanyan, and contributors), bundled unmodified from its UMD build.
   `node app-src\ui-test.js` — loads `index.html` in a simulated browser,
   clicks the Protect flow including the empty-source path, Verify tab, and
   Inspect tab, and fails on any uncaught error
+- Regenerate the README animation: `node app-src\make-demo-gif.js`
+  (dev-only; install its extra deps first: `npm install puppeteer pngjs gifenc`)
