@@ -1,0 +1,203 @@
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">&#8865;</div>
+    <div>XOR Shield
+      <small>deployable string-obfuscation &middot; no eval</small>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button data-tab="protect" class="active">Protect</button>
+    <button data-tab="verify">Verify</button>
+    <button data-tab="inspect">Inspect</button>
+    <button data-tab="help">Help</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ PROTECT ============ -->
+  <section class="panel-tab active" id="tab-protect">
+    <p class="lead">Load your code (e.g. <b>worker.js</b>), tweak options, then <b>Protect</b>. The output stays a valid
+      ES module &mdash; deployable to Cloudflare Workers (no <code>eval</code> is ever used).</p>
+
+    <div class="card">
+      <h2>Source <span class="pill">file or paste</span></h2>
+      <div class="drop" id="dropSrc">
+        <span class="ic">&#8679;</span>
+        Drag &amp; drop a <b>.js</b> / <b>.mjs</b> file here, or click to browse
+        <div class="fname hidden" id="dropSrcName"></div>
+        <input type="file" id="fileSrc" accept=".js,.mjs,.cjs,.txt,.json,text/*" />
+      </div>
+      <label class="f-label" for="srcBox" style="margin-top:12px">... or paste code</label>
+      <textarea id="srcBox" spellcheck="false" placeholder="paste your JavaScript source here"></textarea>
+    </div>
+
+    <div class="card">
+      <h2>Options</h2>
+      <div class="row">
+        <div class="f" style="max-width:170px">
+          <label class="f-label" for="optMinLen">Min string length</label>
+          <input type="number" id="optMinLen" min="1" max="32" value="5" />
+        </div>
+        <div class="f" style="max-width:190px">
+          <label class="f-label" for="optFmt">Payload table format</label>
+          <select id="optFmt">
+            <option value="hex" selected>hex (larger, fastest)</option>
+            <option value="base64">base64 (~25% smaller)</option>
+          </select>
+        </div>
+        <div class="f" style="flex-grow:0">
+          <label class="chk"><input type="checkbox" id="optBanner" checked /> banner comment</label>
+          <label class="chk"><input type="checkbox" id="optMarker" checked /> decoy marker</label>
+        </div>
+        <div class="f" style="flex-grow:0">
+          <button class="btn" id="btnProtect">&#128737;&#65039; Protect code</button>
+        </div>
+      </div>
+      <div class="note dg hidden" id="noSrcNote" style="margin-top:10px">No source loaded yet — drag a <b>.js</b> file into the box above, click it to browse, or paste code below, then press <b>Protect code</b>.</div>
+      <div class="progress" id="progProtect">
+        <div class="track"><div class="fill"></div></div>
+        <div class="label" id="progProtectLabel">working...</div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="cardResult">
+      <h2>Result <span class="pill" id="resVer"></span></h2>
+      <span id="passBadge"></span>
+      <div class="stats-grid" id="statsGrid"></div>
+      <h2 style="margin-top:16px">Skipped strings (kept plaintext)</h2>
+      <table class="scatter" id="skipTable">
+        <thead><tr><th>reason</th><th>count</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="kv"><span class="k">key (per-run):</span><span class="v" id="keyVal"></span>
+        <button class="btn ghost" id="btnCopyKey">copy</button>
+      </div>
+      <h2 style="margin-top:16px">Output preview</h2>
+      <pre class="out" id="outPrev"></pre>
+      <div class="actions">
+        <button class="btn" id="btnDownload">&#11015;&#65039; Download worker.protected.js</button>
+        <button class="btn ghost" id="btnCopyOut">Copy output</button>
+        <button class="btn ghost" id="btnReverify">&#9998; Re-run verify tab</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="cardVerifyAuto">
+      <h2>Round-trip verify <span class="pill auto"></span></h2>
+      <div id="verifyAutoBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ VERIFY ============ -->
+  <section class="panel-tab" id="tab-verify">
+    <p class="lead">Independently check a protected file: re-parses the <b>output</b>, extracts its embedded
+      table + key, decodes every stored record, and byte-compares against the originals.</p>
+
+    <div class="mesh">
+      <div class="card">
+        <h2>1 &middot; Original source</h2>
+        <div class="drop" id="dropOrig">
+          <span class="ic">&#128196;</span> original worker.js
+          <div class="fname hidden" id="dropOrigName"></div>
+          <input type="file" id="fileOrig" accept=".js,.mjs,.cjs,.txt,.json,text/*" />
+        </div>
+      </div>
+      <div class="card">
+        <h2>2 &middot; Protected output</h2>
+        <div class="drop" id="dropProt">
+          <span class="ic">&#128737;</span> worker.protected.js
+          <div class="fname hidden" id="dropProtName"></div>
+          <input type="file" id="fileProt" accept=".js,.mjs,.cjs,.txt,.json,text/*" />
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="f" style="flex-grow:0"><button class="btn" id="btnVerify">&#9989; Verify match</button></div>
+        <div class="f" style="flex-grow:0"><button class="btn ghost" id="btnVerifyLast">...or verify last protect run</button></div>
+      </div>
+      <div class="progress" id="progVerify"><div class="track"><div class="fill"></div></div>
+        <div class="label" id="progVerifyLabel">analyzing...</div>
+      </div>
+      <div id="verifyBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ INSPECT ============ -->
+  <section class="panel-tab" id="tab-inspect">
+    <p class="lead">Paste-drop any file protected by <b>this tool</b> to audit its stored strings and extract the
+      embedded key. Works fully offline &mdash; handy for maintenance or manual edits.</p>
+    <div class="card">
+      <h2>Protected file</h2>
+      <div class="drop" id="dropInsp">
+        <span class="ic">&#128270;</span> drop worker.protected.js here
+        <div class="fname hidden" id="dropInspName"></div>
+        <input type="file" id="fileInsp" accept=".js,.mjs,.cjs,.txt,.json,text/*" />
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="f" style="flex-grow:0"><button class="btn" id="btnInspect">&#128269; Decode &amp; list strings</button></div>
+      </div>
+      <div id="inspectBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ HELP ============ -->
+  <section class="panel-tab help" id="tab-help">
+    <div class="card">
+      <h2>What it does</h2>
+      <p>Ordinary whole-file wrappers decode the entire program at runtime &mdash; impossible on Cloudflare Workers,
+        where <b>eval() / new Function</b> are blocked. XOR Shield instead <b>obfuscates string literals</b>:</p>
+      <ul>
+        <li>Parses your ES module with an embedded <b>acorn</b> parser.</li>
+        <li>Every qualifying string literal is <b>XOR-encoded</b> (32-byte fresh key per run, length-prefixed records)
+          into one packed hex/base64 table.</li>
+        <li>Literals are replaced in-place with <code>_x?????(index)</code> lazy-style calls; a tiny helper ships with
+          the output and restores the exact original bytes at runtime. No eval &mdash; just array lookups.</li>
+        <li>Identifiers, numbers, regex literals and <code>export</code> statements stay untouched &rarr; <b>the result
+          is a valid ES module Worker and deploys to Cloudflare as-is</b>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Options</h2>
+      <ul>
+        <li><b>Min string length</b>: strings shorter than this stay readable (default 5) &mdash; tiny strings like
+          <code>GET</code> are not worth hiding and bloat the table.</li>
+        <li><b>Table format</b>: <code>hex</code> doubles payload size, <code>base64</code> grows ~33%. Hex decodes
+          fastest.</li>
+        <li><b>Decoy marker</b>: adds a cosmetic <code>var _nsc?????=..."</code> line, mimicking common "protected
+          release" banners.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Testing against worker.js</h2>
+      <ol style="padding-left:20px">
+        <li>Protect &rarr; the app auto-runs the <b>round-trip verify</b>: re-parses the protected output, decodes every
+          record through the same algorithm and byte-compares with all originals. Result must be <b>PASS</b>.</li>
+        <li>Verify tab also accepts manual original + protected file pairs.</li>
+        <li>Deploy smoke test: <code>npx wrangler dev worker.protected.js</code> then hit the worker; or paste the file
+          into the Cloudflare dashboard module editor.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h2>Limitations (by design)</h2>
+      <ul>
+        <li>The XOR key lives inside the file &mdash; this is <b>obfuscation, not encryption</b>. It stops casual
+          skimming, grep-based tampering and bulk copy-paste, not a determined analyst.</li>
+        <li>Untouched by design: identifiers/property names, string property keys, string literals below min length,
+          tagged templates, templates with <code>${...}</code>, dynamic <code>import()</code> specifiers, module
+          directives such as <b>"use strict"</b>.</li>
+        <li>Output grows ~1.7-2.2x (hex) / ~1.4x (base64). Watch the size report against your Worker plan limit
+          (free: 3 MB compressed, paid: 10 MB).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Inspect mode</h2>
+      <p>Drop any file produced by this tool and it auto-locates the payload table and embedded key (no configuration)
+        and recovers every stored string with its index &mdash; useful to check what got hidden, extract the key, or
+        unlock maintenance. Use <b>Export JSON</b> to dump the full table.</p>
+    </div>
+  </section>
+</main>
+
+<footer>XOR Shield &middot; single-file webapp &middot; works offline &middot; honest limit: obfuscation &ne; encryption</footer>
+<div class="ribbon hidden" id="uiErrorRibbon"></div>
+<div class="toast" id="toast"></div>

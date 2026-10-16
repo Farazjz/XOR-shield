@@ -1,0 +1,18 @@
+# dependencies (dev-only jsdom for the UI smoke test)
+app-src/node_modules/
+
+# generated protected outputs — regenerate via the app or `node app-src/test.js`
+worker.protected.js
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# editors / tools
+.vscode/
+.idea/
+*.swp
+
+# npm
+npm-debug.log*

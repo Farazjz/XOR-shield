@@ -1,0 +1,15 @@
+{
+  "name": "xor-shield",
+  "version": "1.0.0",
+  "description": "Dev dependencies and test scripts for the XOR Shield single-file webapp",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node test.js",
+    "test:ui": "node ui-test.js",
+    "build": "powershell -ExecutionPolicy Bypass -File build.ps1"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.3"
+  }
+}
