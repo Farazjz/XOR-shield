@@ -1,6 +1,6 @@
 # XOR Shield — deployable XOR obfuscator (single-file webapp)
 
-**Live demo:** <https://farazjz.github.io/xor-shield/> · Licensed MIT
+**Live demo:** <https://farazjz.github.io/XOR-shield/> · Licensed MIT
 
 ![XOR Shield in action — paste a worker, press Protect, the round-trip verify passes](assets/demo.gif)
 
